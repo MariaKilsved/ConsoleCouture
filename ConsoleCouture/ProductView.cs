@@ -108,15 +108,17 @@ namespace ConsoleCouture
             using (var db = new Models.ConsoleCoutureContext())
             {
                 var productAndCategory = from product in db.Products
-                               join
-                               category in db.Categories on product.CategoryId equals category.Id
-                               select new { product, category };
+                                         where product.Id == id
+                                         join
+                                         category in db.Categories on product.CategoryId equals category.Id
+                                         select new { product, category };
 
                 Console.Clear();
 
                 foreach(var prodCat in productAndCategory)
                 {
                     Console.WriteLine($"{prodCat.product.Id,-5}{prodCat.product.Name,-85}{prodCat.product.Price:C2}");
+                    Console.WriteLine();
 
                     var asciiArt = new Utility.ASCIIArt();
 
@@ -130,10 +132,38 @@ namespace ConsoleCouture
                         _ => asciiArt.Other()
                     };
                     Console.WriteLine(ascii);
+                    Console.WriteLine();
                     Console.WriteLine(prodCat.product.Info);
                 }
-
             }
+        }
+
+        public static bool SelectProduct(out int id)
+        {
+            id = 0;
+            string sInput;
+
+            do
+            {
+                Console.WriteLine();
+                Console.WriteLine("Skriv in Id:et för en produkt för mer information");
+                Console.WriteLine("Välj M för att gå tillbaka till menyn");
+                Console.WriteLine("Tryck Q för att avsluta");
+
+                sInput = Console.ReadLine();
+
+                if (int.TryParse(sInput, out id) && id > 0 || sInput.ToUpper() == "M")
+                {
+                    return true;
+                }
+                else if (sInput != "Q" && sInput != "q")
+                {
+                    Console.WriteLine("Ogiltig inmatning, försök igen.");
+                }
+
+            } while (sInput != "Q" && sInput != "q");
+
+            return false;
         }
     }
 }

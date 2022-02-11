@@ -6,37 +6,72 @@ namespace ConsoleCouture
     {
         static void Main(string[] args)
         {
-            Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine("╔═╗┌─┐┌┐┌┌─┐┌─┐┬  ┌─┐  ╔═╗┌─┐┬ ┬┌┬┐┬ ┬┬─┐┌─┐");
-            Console.WriteLine("║  │ ││││└─┐│ ││  ├┤   ║  │ ││ │ │ │ │├┬┘├┤");
-            Console.WriteLine("╚═╝└─┘┘└┘└─┘└─┘┴─┘└─┘  ╚═╝└─┘└─┘ ┴ └─┘┴└─└─┘");
-            Console.ResetColor();
+            int selection;
+            int productId = 0;
+            bool Continue;
 
-            bool Continue = MainMenu(out int selection);
+            do
+            {
+                Continue = MainMenu(out selection);
+                if (!Continue) return;
+
+                switch (selection)
+                {
+                    case 1:
+                        ProductView.ListAllProducts();
+                        Continue = ProductView.SelectProduct(out productId);
+                        if(productId > 0)
+                        {
+                            ProductView.GetSingleProduct(productId);
+                            Console.ReadLine();
+                        }
+                        break;
+                    case 2:
+                        ProductView.ListProductsByCategory();
+                        Continue = ProductView.SelectProduct(out productId);
+                        if (productId > 0)
+                        {
+                            ProductView.GetSingleProduct(productId);
+                            Console.ReadLine();
+                        }
+                        break;
+                    case 3:
+                        ProductView.ListProductsByPriceLowToHigh();
+                        Continue = ProductView.SelectProduct(out productId);
+                        if (productId > 0)
+                        {
+                            ProductView.GetSingleProduct(productId);
+                            Console.ReadLine();
+                        }
+                        break;
+                    case 4:
+                        ProductView.ListProductsByPriceHighToLow();
+                        Continue = ProductView.SelectProduct(out productId);
+                        if (productId > 0)
+                        {
+                            ProductView.GetSingleProduct(productId);
+                            Console.ReadLine();
+                        }
+                        break;
+                    case 5:
+                        Console.Clear();
+                        Console.WriteLine("Sök produkt efter namn:");
+                        ProductView.SearchProductsByName(Console.ReadLine());
+                        Continue = ProductView.SelectProduct(out productId);
+                        if (productId > 0)
+                        {
+                            ProductView.GetSingleProduct(productId);
+                            Console.ReadLine();
+                        }
+                        break;
+                    default:
+                        break;
+                }
+
+            } while (Continue);
+
             if (!Continue) return;
 
-            switch (selection)
-            {
-                case 1: 
-                    ProductView.ListAllProducts();
-                    break;
-                case 2:
-                    ProductView.ListProductsByCategory();
-                    break;
-                case 3:
-                    ProductView.ListProductsByPriceLowToHigh();
-                    break;
-                case 4:
-                    ProductView.ListProductsByPriceHighToLow();
-                    break;
-                case 5:
-                    Console.Clear();
-                    Console.WriteLine("Sök produkt efter namn:");
-                    ProductView.SearchProductsByName(Console.ReadLine());
-                    break;
-                default:
-                    break;
-            }
         }
 
         private static bool MainMenu(out int selection)
@@ -44,6 +79,12 @@ namespace ConsoleCouture
             selection = 0;
             string sInput;
             Console.Clear();
+
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine("╔═╗┌─┐┌┐┌┌─┐┌─┐┬  ┌─┐  ╔═╗┌─┐┬ ┬┌┬┐┬ ┬┬─┐┌─┐");
+            Console.WriteLine("║  │ ││││└─┐│ ││  ├┤   ║  │ ││ │ │ │ │├┬┘├┤");
+            Console.WriteLine("╚═╝└─┘┘└┘└─┘└─┘┴─┘└─┘  ╚═╝└─┘└─┘ ┴ └─┘┴└─└─┘");
+            Console.ResetColor();
 
             do
             {
