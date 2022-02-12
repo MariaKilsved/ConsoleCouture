@@ -6,72 +6,80 @@ namespace ConsoleCouture
     {
         static void Main(string[] args)
         {
-            int selection;
+            int menuSelection;
             int productId = 0;
+            int sizeId = 0;
             bool Continue;
+            string title = "Skriv in Id:et för en produkt för mer information";
+            string title2 = "Skriv in id:et för en produkt för att lägga till den till kundvagnen";
+            Cart cart = new Cart();
 
             do
             {
-                Continue = MainMenu(out selection);
+                Continue = MainMenu(out menuSelection);
                 if (!Continue) return;
 
-                switch (selection)
+                switch (menuSelection)
                 {
                     case 1:
                         ProductView.ListAllProducts();
-                        Continue = ProductView.SelectProduct(out productId);
+                        Continue = ProductView.SelectProduct(title, out productId);
                         if(productId > 0)
                         {
                             ProductView.GetSingleProduct(productId);
-                            Console.ReadLine();
+                            Continue = ProductView.SelectProduct(title2, out sizeId);
                         }
                         break;
                     case 2:
                         ProductView.ListProductsByCategory();
-                        Continue = ProductView.SelectProduct(out productId);
+                        Continue = ProductView.SelectProduct(title, out productId);
                         if (productId > 0)
                         {
                             ProductView.GetSingleProduct(productId);
-                            Console.ReadLine();
+                            Continue = ProductView.SelectProduct(title2, out sizeId);
                         }
                         break;
                     case 3:
                         ProductView.ListProductsByPriceLowToHigh();
-                        Continue = ProductView.SelectProduct(out productId);
+                        Continue = ProductView.SelectProduct(title, out productId);
                         if (productId > 0)
                         {
                             ProductView.GetSingleProduct(productId);
-                            Console.ReadLine();
+                            Continue = ProductView.SelectProduct(title2, out sizeId);
                         }
                         break;
                     case 4:
                         ProductView.ListProductsByPriceHighToLow();
-                        Continue = ProductView.SelectProduct(out productId);
+                        Continue = ProductView.SelectProduct(title, out productId);
                         if (productId > 0)
                         {
                             ProductView.GetSingleProduct(productId);
-                            Console.ReadLine();
+                            Continue = ProductView.SelectProduct(title2, out sizeId);
                         }
                         break;
                     case 5:
                         Console.Clear();
                         Console.WriteLine("Sök produkt efter namn:");
                         ProductView.SearchProductsByName(Console.ReadLine());
-                        Continue = ProductView.SelectProduct(out productId);
+                        Continue = ProductView.SelectProduct(title, out productId);
                         if (productId > 0)
                         {
                             ProductView.GetSingleProduct(productId);
-                            Console.ReadLine();
+                            Continue = ProductView.SelectProduct(title2, out sizeId);
                         }
                         break;
                     default:
                         break;
                 }
 
+                if(sizeId > 0)
+                {
+                    cart.Add(sizeId);
+                }
+
             } while (Continue);
 
             if (!Continue) return;
-
         }
 
         private static bool MainMenu(out int selection)

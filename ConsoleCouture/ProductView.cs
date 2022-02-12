@@ -107,38 +107,54 @@ namespace ConsoleCouture
         {
             using (var db = new Models.ConsoleCoutureContext())
             {
-                var productAndCategory = from product in db.Products
+                var productDetails = from product in db.Products
                                          where product.Id == id
                                          join
                                          category in db.Categories on product.CategoryId equals category.Id
                                          select new { product, category };
 
+                var prod = productDetails.ToList();
+
                 Console.Clear();
 
-                foreach(var prodCat in productAndCategory)
+                Console.WriteLine($"{prod[0].product.Id,-5}{prod[0].product.Name,-85}{prod[0].product.Price:C2}");
+                Console.WriteLine();
+
+                var asciiArt = new Utility.ASCIIArt();
+
+                string ascii = prod[0].category.Name switch
                 {
-                    Console.WriteLine($"{prodCat.product.Id,-5}{prodCat.product.Name,-85}{prodCat.product.Price:C2}");
-                    Console.WriteLine();
+                    "Tröjor" => asciiArt.Shirt(),
+                    "Byxor och shorts" => asciiArt.Pants(),
+                    "Klänningar och kjolar" => asciiArt.Dress(),
+                    "Hattar och huvudscarves" => asciiArt.Hat(),
+                    "Solglasögon" => asciiArt.Glasses(),
+                    _ => asciiArt.Other()
+                };
 
-                    var asciiArt = new Utility.ASCIIArt();
+                Console.WriteLine(ascii);
+                Console.WriteLine();
+                Console.WriteLine(prod[0].product.Info);
+            }
 
-                    string ascii = prodCat.category.Name switch
-                    {
-                        "Tröjor" => asciiArt.Shirt(),
-                        "Byxor och shorts" => asciiArt.Pants(),
-                        "Klänningar och kjolar" => asciiArt.Dress(),
-                        "Hattar och huvudscarves" => asciiArt.Hat(),
-                        "Solglasögon" => asciiArt.Glasses(),
-                        _ => asciiArt.Other()
-                    };
-                    Console.WriteLine(ascii);
-                    Console.WriteLine();
-                    Console.WriteLine(prodCat.product.Info);
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var sizes = from stock in db.Stocks
+                            where stock.ProductId == id && stock.InStock > 0
+                            select stock;
+
+                Console.WriteLine();
+                Console.WriteLine("Tillgängliga storlekar:");
+                Console.WriteLine($"{"Id",-5}{"Produkt",-85}");
+                foreach (var size in sizes)
+                {
+                    Console.WriteLine($"{size.Id,-5}{size.Size}");
                 }
+
             }
         }
 
-        public static bool SelectProduct(out int id)
+        public static bool SelectProduct(string title, out int id)
         {
             id = 0;
             string sInput;
@@ -146,7 +162,7 @@ namespace ConsoleCouture
             do
             {
                 Console.WriteLine();
-                Console.WriteLine("Skriv in Id:et för en produkt för mer information");
+                Console.WriteLine(title);
                 Console.WriteLine("Välj M för att gå tillbaka till menyn");
                 Console.WriteLine("Tryck Q för att avsluta");
 
