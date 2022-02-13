@@ -272,6 +272,7 @@ namespace ConsoleCouture
 
             var sql = $"INSERT INTO Products(Name, CategoryId, SupplierId, Price, Info) VALUES ('{name}', '{categoryId}', '{supplierId}', '{price}', '{info})";
 
+            /*
             using (var connection = new SqlConnection(connString))
             {
                 try
@@ -283,7 +284,7 @@ namespace ConsoleCouture
                     Console.WriteLine(e.Message);
                 }
             }
-
+            */
 
 
 

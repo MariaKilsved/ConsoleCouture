@@ -27,19 +27,34 @@ namespace ConsoleCouture
             cartList.Clear();
         }
 
-        //To do: Remove doubles and include quantity
         public override string ToString()
         {
             string sRet = "---CART---:\n";
 
-            for (int i = 0; i < cartList.Count; i++)
-            {
-                sRet += $"{cartList[i].ProductId,-5}{cartList[i].ProductName} ({cartList[i].Size})\n{cartList[i].Price:C2}\n\n";
-            }
-            return sRet;
+            //Using Linq but no query
+            var groupedCart = (from x in cartList
+                    group x by x into g
+                    let count = g.Count()
+                    orderby count descending
+                    select new { Item = g.Key, Count = count }).ToList();
 
+
+            foreach (var x in groupedCart)
+            {
+                sRet += $"{x.Item.ProductId,-5}{x.Item.ProductName} ({x.Item.Size})\n{x.Item.Price:C2}{x.Count, -20}\n\n";
+            }
+
+            decimal sum = 0;
+            foreach(var product in cartList)
+            {
+                sum += (product.Price ?? 0);
+            }
+
+            sRet += $"Summa: {sum:C2}";
+            return sRet;
         }
 
+        //TO DO: Check what is already in cart to make sure you don't add more than what's in stock
         public void Add(int id)
         {
             using (var db = new Models.ConsoleCoutureContext())
@@ -54,5 +69,56 @@ namespace ConsoleCouture
             }
         }
 
+        //TO DO: Error handling
+        public void Remove(int id)
+        {
+            for(int i = 0; i < cartList.Count; i++)
+            {
+                if(cartList[i].ProductId == id)
+                {
+                    cartList.RemoveAt(i);
+                }
+            }
+        }
+
+        public int CountItemOccurences(int stockId)
+        {
+            int count = 0;
+
+            foreach(var item in cartList)
+            {
+                if(item.StockId == stockId)
+                {
+                    count++;
+                }
+            }
+            return count;
+        }
+
+        public void IncreaseQuantity(int stockId)
+        {
+            int count = CountItemOccurences(stockId);
+            var tempProduct = new Models.CartItemQuery();
+
+            for (int i = 0; i < cartList.Count; i++)
+            {
+                if (cartList[i].StockId == stockId)
+                {
+                    tempProduct = cartList[i];
+                    break;
+                }
+            }
+
+
+//-----------------------TODO
+
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var availableUnits = from stock in db.Stocks
+                            where stock.Id == stockId && stock.InStock > 0
+                            select stock.InStock;
+
+            }
+        }
     }
 }
