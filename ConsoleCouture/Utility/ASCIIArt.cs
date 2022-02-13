@@ -8,7 +8,7 @@ namespace ConsoleCouture.Utility
 {
     class ASCIIArt
     {
-        public string Shirt()
+        public static string Shirt()
         {
             /*
                __   __
@@ -21,7 +21,7 @@ namespace ConsoleCouture.Utility
             return "   __   __\n /|  `-´  |\\\n/_|  o.o  |_\\\n  | o`o´o |\n  |  o^o  |\n  |_______|";
         }
 
-        public string Dress()
+        public static string Dress()
         {
 //            |   | 
 //           ( \ / ) 
@@ -33,7 +33,7 @@ namespace ConsoleCouture.Utility
             return "  |   |\n ( \\ / )\n  \\\\*//\n  ))*((\n ///|\\\\\\\n////|\\\\\\\\\n";
         }
 
-        public string Pants()
+        public static string Pants()
         {
 //            ,==c==.
 //            |_/|\_|
@@ -45,7 +45,7 @@ namespace ConsoleCouture.Utility
             return ",==c==.\n|_/|\\_|\n| ´|` |\n|  |  |\n|  |  |\n|__|__|";
         }
 
-        public string Hat()
+        public static string Hat()
         {
 //                 ,~"""~.
 //              ,-/       \-.
@@ -56,7 +56,7 @@ namespace ConsoleCouture.Utility
             return "     ,~\"\"\"~.\n  ,-/       \\-.\n.' '`._____.'` `.\n `-._         _,-'\n     `--...--'";
         }
 
-        public string Glasses()
+        public static string Glasses()
         {
 //            /\     /\
 //              \ _____\
@@ -65,7 +65,7 @@ namespace ConsoleCouture.Utility
             return "/\\     /\\\n  \\ _____\\\n   (_)-(_)\n";
         }
 
-        public string Other()
+        public static string Other()
         {
 //              _   _
 //             /)`:'(\

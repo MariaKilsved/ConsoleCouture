@@ -6,24 +6,22 @@ namespace ConsoleCouture
     {
         static void Main(string[] args)
         {
-            int menuSelection;
-            int productId = 0;
             int sizeId = 0;
             bool Continue;
             string title = "Skriv in Id:et för en produkt för mer information";
             string title2 = "Skriv in id:et för en produkt för att lägga till den till kundvagnen";
-            Cart cart = new Cart();
+            Cart cart = new();
 
             do
             {
-                Continue = MainMenu(out menuSelection);
+                Continue = MainMenu(out int menuSelection);
                 if (!Continue) return;
 
                 switch (menuSelection)
                 {
                     case 1:
                         ProductView.ListAllProducts();
-                        Continue = ProductView.SelectProduct(title, out productId);
+                        Continue = ProductView.SelectProduct(title, out int productId);
                         if(productId > 0)
                         {
                             ProductView.GetSingleProduct(productId);
@@ -84,7 +82,6 @@ namespace ConsoleCouture
 
         private static bool MainMenu(out int selection)
         {
-            selection = 0;
             string sInput;
             Console.Clear();
 
@@ -104,6 +101,9 @@ namespace ConsoleCouture
                 Console.WriteLine("[5] Sök produkt");
                 Console.WriteLine("[6] Administration");
                 Console.WriteLine("[Q] Avsluta");
+
+                //Att göra: rea, populärast, nyast
+                //Bör ändra query:s så att bara top 100 eller något visas åt gången?
 
                 sInput = Console.ReadLine();
 

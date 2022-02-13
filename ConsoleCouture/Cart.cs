@@ -9,7 +9,7 @@ namespace ConsoleCouture
     class Cart
     {
 
-        protected List<Models.CartItemQuery> cartList = new List<Models.CartItemQuery>();
+        protected List<Models.CartItemQuery> cartList = new();
 
         public Models.CartItemQuery this[int idx]
         {

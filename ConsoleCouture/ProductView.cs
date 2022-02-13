@@ -120,16 +120,14 @@ namespace ConsoleCouture
                 Console.WriteLine($"{prod[0].product.Id,-5}{prod[0].product.Name,-85}{prod[0].product.Price:C2}");
                 Console.WriteLine();
 
-                var asciiArt = new Utility.ASCIIArt();
-
                 string ascii = prod[0].category.Name switch
                 {
-                    "Tröjor" => asciiArt.Shirt(),
-                    "Byxor och shorts" => asciiArt.Pants(),
-                    "Klänningar och kjolar" => asciiArt.Dress(),
-                    "Hattar och huvudscarves" => asciiArt.Hat(),
-                    "Solglasögon" => asciiArt.Glasses(),
-                    _ => asciiArt.Other()
+                    "Tröjor" => Utility.ASCIIArt.Shirt(),
+                    "Byxor och shorts" => Utility.ASCIIArt.Pants(),
+                    "Klänningar och kjolar" => Utility.ASCIIArt.Dress(),
+                    "Hattar och huvudscarves" => Utility.ASCIIArt.Hat(),
+                    "Solglasögon" => Utility.ASCIIArt.Glasses(),
+                    _ => Utility.ASCIIArt.Other()
                 };
 
                 Console.WriteLine(ascii);
@@ -156,7 +154,6 @@ namespace ConsoleCouture
 
         public static bool SelectProduct(string title, out int id)
         {
-            id = 0;
             string sInput;
 
             do
