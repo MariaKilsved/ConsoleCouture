@@ -120,6 +120,7 @@ namespace ConsoleCouture
                 Console.WriteLine($"{prod[0].product.Id,-5}{prod[0].product.Name,-85}{prod[0].product.Price:C2}");
                 Console.WriteLine();
 
+                //Image
                 string ascii = prod[0].category.Name switch
                 {
                     "Tröjor" => Utility.ASCIIArt.Shirt(),

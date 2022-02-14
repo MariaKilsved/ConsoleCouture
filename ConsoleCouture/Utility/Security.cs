@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ConsoleCouture.Utility
 {
-    internal class Security
+    class Security
     {
         public string ComputeHash(byte[] bytesToHash, byte[] salt)
         {

@@ -50,35 +50,37 @@ namespace ConsoleCouture
                 sum += (product.Price ?? 0);
             }
 
-            sRet += $"Summa: {sum:C2}";
+            sRet += $"Summa: {sum:C2}\n";
+            sRet += $"Moms: {(sum * 0.12m):C2}\n";
+            sRet += $"Totalt: {(sum * 1.12m):C2}\n";
             return sRet;
         }
 
-        //TO DO: Check what is already in cart to make sure you don't add more than what's in stock
-        public void Add(int id)
+        public void AddNewProduct(int stockId)
         {
             using (var db = new Models.ConsoleCoutureContext())
             {
                 var products = from product in db.Products
                                join
                                stock in db.Stocks on product.Id equals stock.ProductId
-                               where product.Id == id && stock.InStock > 0
+                               where stock.Id == stockId && stock.InStock > 0
                                select new Models.CartItemQuery { ProductId = product.Id, ProductName = product.Name, Price = product.Price, StockId = stock.Id, Size = stock.Size, InStock = stock.InStock };
                 
                 cartList.Add(products.ToList()[0]);
             }
         }
 
-        //TO DO: Error handling
-        public void Remove(int id)
+        public bool Remove(int stockId)
         {
             for(int i = 0; i < cartList.Count; i++)
             {
-                if(cartList[i].ProductId == id)
+                if(cartList[i].StockId == stockId)
                 {
                     cartList.RemoveAt(i);
+                    return true;
                 }
             }
+            return false;
         }
 
         public int CountItemOccurences(int stockId)
@@ -95,7 +97,7 @@ namespace ConsoleCouture
             return count;
         }
 
-        public void IncreaseQuantity(int stockId)
+        public bool IncreaseQuantity(int stockId)
         {
             int count = CountItemOccurences(stockId);
             var tempProduct = new Models.CartItemQuery();
@@ -109,16 +111,26 @@ namespace ConsoleCouture
                 }
             }
 
-
-//-----------------------TODO
-
+            //Check to see if it's possible to add
             using (var db = new Models.ConsoleCoutureContext())
             {
                 var availableUnits = from stock in db.Stocks
                             where stock.Id == stockId && stock.InStock > 0
                             select stock.InStock;
 
+
+                foreach (var item in availableUnits.ToList())
+                {
+                    if(count >= (item ?? 0))
+                    {
+                        return false;
+                    }
+                }
             }
+
+            //Actually add the item
+            cartList.Add(tempProduct);
+            return true;
         }
     }
 }

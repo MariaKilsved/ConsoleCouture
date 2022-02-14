@@ -267,29 +267,14 @@ namespace ConsoleCouture
 
             //Actually add the new product
 
-            //var prod = new { Name = name, CategoryId = categoryId, SupplierId = supplierId, Price = price, Info = info };
+            var prod = new ConsoleCouture.Models.Product{ Name = name, CategoryId = categoryId, SupplierId = supplierId, Price = price, Info = info };
 
-
-            var sql = $"INSERT INTO Products(Name, CategoryId, SupplierId, Price, Info) VALUES ('{name}', '{categoryId}', '{supplierId}', '{price}', '{info})";
-
-            /*
-            using (var connection = new SqlConnection(connString))
+            using (var db = new Models.ConsoleCoutureContext())
             {
-                try
-                {
-                    var affectedRows = connection.Execute(sql);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                }
+                var products = db.Products;
+                products.Add(prod);
+                db.SaveChanges();
             }
-            */
-
-
-
-
-
 
             return false;
         }

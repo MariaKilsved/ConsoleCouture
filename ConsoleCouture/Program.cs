@@ -66,13 +66,17 @@ namespace ConsoleCouture
                             Continue = ProductView.SelectProduct(title2, out sizeId);
                         }
                         break;
+                    case 6:
+                        Console.Clear();
+                        DapperUser.RegisterUser();
+                        break;
                     default:
                         break;
                 }
 
                 if(sizeId > 0)
                 {
-                    cart.Add(sizeId);
+                    cart.AddNewProduct(sizeId);
                 }
 
             } while (Continue);
@@ -99,7 +103,8 @@ namespace ConsoleCouture
                 Console.WriteLine("[3] Visa produkter sorterade efter pris lågt till högt");
                 Console.WriteLine("[4] Visa produkter sorterade efter pris högt till lågt");
                 Console.WriteLine("[5] Sök produkt");
-                Console.WriteLine("[6] Administration");
+                Console.WriteLine("[6] Registrera ny användare");
+                Console.WriteLine("[7] Administration");
                 Console.WriteLine("[Q] Avsluta");
 
                 //Att göra: rea, populärast, nyast
@@ -107,7 +112,7 @@ namespace ConsoleCouture
 
                 sInput = Console.ReadLine();
 
-                if(int.TryParse(sInput, out selection) && selection > 0 && selection < 7)
+                if(int.TryParse(sInput, out selection) && selection > 0 && selection < 8)
                 {
                     return true;
                 }
