@@ -10,19 +10,18 @@ namespace ConsoleCouture
 {
     class DapperUser
     {
-        static string connString = "data source=.\\SQLEXPRESS; initial catalog = ConsoleCouture; persist security info = True; Integrated Security = True;";
+        static readonly string connString = "data source=.\\SQLEXPRESS; initial catalog = ConsoleCouture; persist security info = True; Integrated Security = True;";
 
         public static void RegisterUser()
         {
-            string firstName = "";          //varchar(20)
-            string lastName = "";           //varchar(20)
-            string mail = "";               //varchar(100)
-            string phone = "";              //varchar(20)
-            string password = "";           //char(32)
-            string salt = "";
-            int? saltId = null;             //int
-            DateTime? birthDate = null;     //date
-            string gender = "";             //char(2)
+            string firstName;          //varchar(20)
+            string lastName;           //varchar(20)
+            string mail;               //varchar(100)
+            string phone;              //varchar(20)
+            string password;           //char(32)
+            int? saltId;                //int
+            DateTime? birthDate;        //date
+            string gender;             //char(2)
 
             Console.Clear();
             Console.WriteLine("Mata in dina användaruppgifter.");
@@ -31,13 +30,12 @@ namespace ConsoleCouture
             lastName = ObtainStringInput("Efternamn:", 20);
             mail = ObtainMailInput("Mailadress:", 100);
             phone = ObtainStringInput("Telefonnummer:", 20);
-            password = CreatePassword(out salt);
+            password = CreatePassword(out string salt);
             birthDate = ObtainDateInput();
             gender = ObtainGenderInput();
 
 
             //Add the salt
-            int affectedRows = 0;
 
             var sql = $"insert into Salts(Salt) values ('{salt}')";
 
@@ -45,7 +43,7 @@ namespace ConsoleCouture
             {
                 try
                 {
-                    affectedRows = connection.Execute(sql);
+                    connection.Execute(sql);
                 }
                 catch (Exception e)
                 {
@@ -54,7 +52,6 @@ namespace ConsoleCouture
             }
 
             //Get the salt id back
-            affectedRows = 0;
 
             sql = $"SELECT Id FROM Salts WHERE Salt = '{salt}'";
 
@@ -66,10 +63,10 @@ namespace ConsoleCouture
             }
 
             //Will be the id of the last identical salt added. There won't be a problem with duplicates since Customers could have the same salt.
-            saltId = ids[ids.Count - 1];
+            saltId = ids[^1];
 
             //Actually add the user:
-            affectedRows = 0;
+            var affectedRows = 0;
 
             sql = $"INSERT INTO Customers(FirstName, LastName, Mail, Phone, Password, SaltId, BirthDate, Gender) VALUES ('{firstName}', '{lastName}', '{mail}', '{phone}', '{password}', {saltId}, '{birthDate}', '{gender}')";
 
@@ -81,12 +78,14 @@ namespace ConsoleCouture
                     if(affectedRows > 0)
                     {
                         Console.WriteLine("Användare tillagd.");
-                        System.Threading.Thread.Sleep(1000);
+                        System.Threading.Thread.Sleep(3000);
                     }
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e.Message);
+                    System.Threading.Thread.Sleep(7000);
+
                 }
             }
 
@@ -202,7 +201,7 @@ namespace ConsoleCouture
 
         private static DateTime ObtainDateInput()
         {
-            string sInput = "";
+            string sInput;
             DateTime date;
 
             while (true)
@@ -225,7 +224,7 @@ namespace ConsoleCouture
 
         private static string ObtainGenderInput()
         {
-            string sInput = "";
+            string sInput;
 
             while(true)
             {

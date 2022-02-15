@@ -15,6 +15,7 @@ namespace ConsoleCouture
             do
             {
                 Continue = MainMenu(out int menuSelection);
+                sizeId = 0;
                 if (!Continue) return;
 
                 switch (menuSelection)
@@ -68,7 +69,21 @@ namespace ConsoleCouture
                         break;
                     case 6:
                         Console.Clear();
+                        Console.WriteLine(cart.ToString());
+                        Console.ReadKey();
+                        break;
+                    case 7:
+                        Console.Clear();
                         DapperUser.RegisterUser();
+                        break;
+                    case 8:
+                        Console.Clear();
+                        Continue = DapperAdmin.AdminMenuOptions(out int selection);
+                        if(!Continue)
+                        {
+                            break;
+                        }
+                        Continue = DapperAdmin.ExecuteAdminMenu(selection);
                         break;
                     default:
                         break;
@@ -103,8 +118,9 @@ namespace ConsoleCouture
                 Console.WriteLine("[3] Visa produkter sorterade efter pris lågt till högt");
                 Console.WriteLine("[4] Visa produkter sorterade efter pris högt till lågt");
                 Console.WriteLine("[5] Sök produkt");
-                Console.WriteLine("[6] Registrera ny användare");
-                Console.WriteLine("[7] Administration");
+                Console.WriteLine("[6] Visa kundvagnen");
+                Console.WriteLine("[7] Registrera ny användare");
+                Console.WriteLine("[8] Administration");
                 Console.WriteLine("[Q] Avsluta");
 
                 //Att göra: rea, populärast, nyast
@@ -112,7 +128,7 @@ namespace ConsoleCouture
 
                 sInput = Console.ReadLine();
 
-                if(int.TryParse(sInput, out selection) && selection > 0 && selection < 8)
+                if(int.TryParse(sInput, out selection) && selection > 0 && selection < 9)
                 {
                     return true;
                 }

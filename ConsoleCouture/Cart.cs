@@ -9,9 +9,9 @@ namespace ConsoleCouture
     class Cart
     {
 
-        protected List<Models.CartItemQuery> cartList = new();
+        protected List<Models.CartItemQueryGroup> cartList = new();
 
-        public Models.CartItemQuery this[int idx]
+        public Models.CartItemQueryGroup this[int idx]
         {
             get
             {
@@ -22,32 +22,27 @@ namespace ConsoleCouture
             }
         }
 
+        /*
         public void Clear()
         {
             cartList.Clear();
         }
+        */
 
         public override string ToString()
         {
-            string sRet = "---CART---:\n";
+            string sRet = "I KUNDVAGNEN:\n";
 
-            //Using Linq but no query
-            var groupedCart = (from x in cartList
-                    group x by x into g
-                    let count = g.Count()
-                    orderby count descending
-                    select new { Item = g.Key, Count = count }).ToList();
-
-
-            foreach (var x in groupedCart)
+            foreach (var x in cartList)
             {
-                sRet += $"{x.Item.ProductId,-5}{x.Item.ProductName} ({x.Item.Size})\n{x.Item.Price:C2}{x.Count, -20}\n\n";
+                sRet += $"{x.cartItem.ProductId,-5}{x.cartItem.ProductName} ({x.cartItem.Size})\n{x.cartItem.Price:C2}\tAntal: {x.quantity}\n\n";
             }
 
+            //Calculate sum
             decimal sum = 0;
             foreach(var product in cartList)
             {
-                sum += (product.Price ?? 0);
+                sum += (product.cartItem.Price ?? 0);
             }
 
             sRet += $"Summa: {sum:C2}\n";
@@ -58,6 +53,27 @@ namespace ConsoleCouture
 
         public void AddNewProduct(int stockId)
         {
+            bool success;
+
+            //Check to see if item already exists, and increase quantity if it does
+            foreach (var item in cartList)
+            {
+                if(item.cartItem.StockId == stockId)
+                {
+                    success = IncreaseQuantity(stockId);
+                    if(success)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Misslyckades med att lägga till i kundvagnen. Produkten är slut på lager.");
+                        return;
+                    }
+                }
+            }
+
+            //Adding the item for the first time
             using (var db = new Models.ConsoleCoutureContext())
             {
                 var products = from product in db.Products
@@ -65,8 +81,12 @@ namespace ConsoleCouture
                                stock in db.Stocks on product.Id equals stock.ProductId
                                where stock.Id == stockId && stock.InStock > 0
                                select new Models.CartItemQuery { ProductId = product.Id, ProductName = product.Name, Price = product.Price, StockId = stock.Id, Size = stock.Size, InStock = stock.InStock };
-                
-                cartList.Add(products.ToList()[0]);
+
+                var singleProduct = new Models.CartItemQueryGroup { cartItem = products.ToList()[0], quantity =  1 };
+                cartList.Add(singleProduct);
+                Console.Clear();
+                Console.WriteLine($"{products.ToList()[0].ProductName}({products.ToList()[0].Size}) lades till i kundvagnen.");
+                System.Threading.Thread.Sleep(3000);
             }
         }
 
@@ -74,43 +94,38 @@ namespace ConsoleCouture
         {
             for(int i = 0; i < cartList.Count; i++)
             {
-                if(cartList[i].StockId == stockId)
+                if(cartList[i].cartItem.StockId == stockId)
                 {
-                    cartList.RemoveAt(i);
+                    cartList[i].quantity = cartList[i].quantity - 1;
+
+                    if(cartList[i].quantity < 1)
+                    {
+                        cartList.RemoveAt(i);
+                    }
                     return true;
                 }
             }
             return false;
         }
 
+        /*
         public int CountItemOccurences(int stockId)
         {
             int count = 0;
 
             foreach(var item in cartList)
             {
-                if(item.StockId == stockId)
+                if(item.cartItem.StockId == stockId)
                 {
                     count++;
                 }
             }
             return count;
         }
+        */
 
         public bool IncreaseQuantity(int stockId)
         {
-            int count = CountItemOccurences(stockId);
-            var tempProduct = new Models.CartItemQuery();
-
-            for (int i = 0; i < cartList.Count; i++)
-            {
-                if (cartList[i].StockId == stockId)
-                {
-                    tempProduct = cartList[i];
-                    break;
-                }
-            }
-
             //Check to see if it's possible to add
             using (var db = new Models.ConsoleCoutureContext())
             {
@@ -119,18 +134,21 @@ namespace ConsoleCouture
                             select stock.InStock;
 
 
+                //Actually add the item
                 foreach (var item in availableUnits.ToList())
                 {
-                    if(count >= (item ?? 0))
+                    foreach(var cIG in cartList)
                     {
-                        return false;
+                        if(cIG.cartItem.StockId == stockId && item > cIG.quantity)
+                        {
+                            cIG.quantity++;
+                            return true;
+                        }
                     }
                 }
             }
 
-            //Actually add the item
-            cartList.Add(tempProduct);
-            return true;
+            return false;
         }
     }
 }
