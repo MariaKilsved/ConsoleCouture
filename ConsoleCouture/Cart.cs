@@ -10,6 +10,7 @@ namespace ConsoleCouture
     {
 
         protected List<Models.CartItemQueryGroup> cartList = new();
+        const decimal VAT = 0.12m;
 
         public Models.CartItemQueryGroup this[int idx]
         {
@@ -22,12 +23,22 @@ namespace ConsoleCouture
             }
         }
 
-        /*
+        
         public void Clear()
         {
             cartList.Clear();
         }
-        */
+        
+        public decimal SumPrice()
+        {
+            decimal sum = 0;
+            foreach (var product in cartList)
+            {
+                sum += (product.cartItem.Price ?? 0);
+            }
+
+            return sum;
+        }
 
         public override string ToString()
         {
@@ -39,16 +50,59 @@ namespace ConsoleCouture
             }
 
             //Calculate sum
-            decimal sum = 0;
-            foreach(var product in cartList)
-            {
-                sum += (product.cartItem.Price ?? 0);
-            }
+            decimal sum = SumPrice();
 
             sRet += $"Summa: {sum:C2}\n";
-            sRet += $"Moms: {(sum * 0.12m):C2}\n";
-            sRet += $"Totalt: {(sum * 1.12m):C2}\n";
+            sRet += $"Moms: {(sum * VAT):C2}\n";
+            sRet += $"Totalt: {(sum * (1 + VAT)):C2}\n";
             return sRet;
+        }
+
+        public bool CartMenu()
+        {
+            Console.WriteLine();
+            Console.WriteLine("Mata in C för att gå till kassan.");
+            Console.WriteLine("Välj M för att gå tillbaka till huvudmenyn");
+            Console.WriteLine("Tryck Q för att avsluta");
+            string sInput = "";
+
+            while(true)
+            {
+                sInput = Console.ReadLine();
+
+                if(String.IsNullOrWhiteSpace(sInput) || sInput == "M" || sInput == "m")
+                {
+                    return true;
+                }
+                else if(sInput == "Q" || sInput == "q")
+                {
+                    return false;
+                }
+                else if(sInput == "C" || sInput == "c")
+                {
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Ogiltigt alternativ. Försök igen.");
+                }
+            }
+
+            var delivery = DapperCheckout.SelectDeliveryOptions();
+            var payment = DapperCheckout.SelectPaymentOptions();
+
+            //Calculate sum
+            decimal sumVAT = SumPrice() * (1 + VAT);
+
+            Clear();
+
+            Console.Clear();
+            Console.WriteLine("Placeholder.");
+            Console.WriteLine($"Du \"betalade\" {sumVAT:C2} för varorna.");
+            Console.WriteLine("Välkommen åter!");
+            Console.ReadKey();
+
+            return true;
         }
 
         public void AddNewProduct(int stockId)
@@ -63,11 +117,14 @@ namespace ConsoleCouture
                     success = IncreaseQuantity(stockId);
                     if(success)
                     {
+                        Console.WriteLine($"{item.cartItem.ProductName}({item.cartItem.Size}) lades till i kundvagnen.");
+                        System.Threading.Thread.Sleep(3000);
                         return;
                     }
                     else
                     {
                         Console.WriteLine("Misslyckades med att lägga till i kundvagnen. Produkten är slut på lager.");
+                        System.Threading.Thread.Sleep(3000);
                         return;
                     }
                 }
@@ -102,6 +159,8 @@ namespace ConsoleCouture
                     {
                         cartList.RemoveAt(i);
                     }
+                    Console.WriteLine($"{cartList[i].cartItem.ProductName} ({cartList[i].cartItem.Size}) togs bort ur kundvagnen.");
+                    System.Threading.Thread.Sleep(3000);
                     return true;
                 }
             }
