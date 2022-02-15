@@ -70,7 +70,7 @@ namespace ConsoleCouture
             {
                 sInput = Console.ReadLine();
 
-                if(String.IsNullOrWhiteSpace(sInput) || sInput == "M" || sInput == "m")
+                if(sInput == "M" || sInput == "m")
                 {
                     return true;
                 }
@@ -80,29 +80,17 @@ namespace ConsoleCouture
                 }
                 else if(sInput == "C" || sInput == "c")
                 {
-                    break;
+                    //Could add a discount here later...
+                    var checkout = new DapperCheckout();
+                    checkout.PlaceOrder(cartList);
+                    Clear();
+                    return true;
                 }
                 else
                 {
                     Console.WriteLine("Ogiltigt alternativ. Försök igen.");
                 }
             }
-
-            var delivery = DapperCheckout.SelectDeliveryOptions();
-            var payment = DapperCheckout.SelectPaymentOptions();
-
-            //Calculate sum
-            decimal sumVAT = SumPrice() * (1 + VAT);
-
-            Clear();
-
-            Console.Clear();
-            Console.WriteLine("Placeholder.");
-            Console.WriteLine($"Du \"betalade\" {sumVAT:C2} för varorna.");
-            Console.WriteLine("Välkommen åter!");
-            Console.ReadKey();
-
-            return true;
         }
 
         public void AddNewProduct(int stockId)
