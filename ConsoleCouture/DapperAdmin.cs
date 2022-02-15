@@ -13,8 +13,8 @@ namespace ConsoleCouture
     {
         static readonly string connString = "data source=.\\SQLEXPRESS; initial catalog = ConsoleCouture; persist security info = True; Integrated Security = True;";
 
-        //- Kunna skapa produktkategorier
-        //- Kunna lägga till produkter och kategorier
+        //- Kunna skapa produktkategorier                                     - Klart
+        //- Kunna lägga till produkter och kategorier                         - Klart
         //- Kunna se försäljningsinformation
         //- Kunna ta ut statistik om t.ex. mest säljande produktkategorier
 
@@ -38,11 +38,13 @@ namespace ConsoleCouture
                 Console.WriteLine("[1] Lägg till produkt");
                 Console.WriteLine("[2] Lägg till produktkategori");
                 Console.WriteLine("[3] Lägg till leverantör");
+                Console.WriteLine("[4] Ta bort produkt");
+                Console.WriteLine("[5] Byt namn på produktkategori");
                 Console.WriteLine("[Q] Avsluta");
 
                 sInput = Console.ReadLine();
 
-                if (int.TryParse(sInput, out selection) && selection > 0 && selection < 4)
+                if (int.TryParse(sInput, out selection) && selection > 0 && selection < 6)
                 {
                     return true;
                 }
@@ -70,6 +72,12 @@ namespace ConsoleCouture
                     break;
                 case 3:
                     Continue = AddSupplier();
+                    break;
+                case 4:
+                    Continue = RemoveProduct();
+                    break;
+                case 5:
+                    Continue = RenameCategory();
                     break;
                 default:
                     break;
@@ -107,7 +115,11 @@ namespace ConsoleCouture
                 {
                     Console.WriteLine("För långt namn, försök igen.");
                 }
-                else if(sInput == "M" || sInput == "m")
+                else if (String.IsNullOrWhiteSpace(sInput))
+                {
+                    Console.WriteLine("Namnet måste ha ett innehåll.");
+                }
+                else if (sInput == "M" || sInput == "m")
                 {
                     return true;
                 }
@@ -121,28 +133,14 @@ namespace ConsoleCouture
                 }
             }
             //---categoryId---
-            string categoriesString = "Tillgängliga kategorier:\n";
-            categoriesString += $"{"0",-5}{"Utan kategori"}\n";
-            sInput = "";
+            string categoriesString;
             List<Models.Category> categoriesList;
-
-            //Get categories
-            using (var db = new Models.ConsoleCoutureContext())
-            {
-                var categories = from category in db.Categories
-                                    select category;
-
-                categoriesList = categories.ToList();
-
-                foreach(var category in categoriesList)
-                {
-                    categoriesString += $"{category.Id, -5}{category.Name}\n";
-                }
-            }
-
-            //Validate input
+            GetCategoriesString(out categoriesString, out categoriesList);
+            sInput = "";
             Console.WriteLine();
             Console.WriteLine(categoriesString);
+
+            //Validate input
             while (isAdding)
             {
                 Console.WriteLine("Mata in en siffra som motsvarar en kategori.");
@@ -179,7 +177,7 @@ namespace ConsoleCouture
             using (var db = new Models.ConsoleCoutureContext())
             {
                 var suppliers = from supplier in db.Suppliers
-                                    select new {supplier.Id, supplier.CompanyName};
+                                select new { supplier.Id, supplier.CompanyName };
 
                 foreach (var supplier in suppliers)
                 {
@@ -223,7 +221,7 @@ namespace ConsoleCouture
             Console.WriteLine();
 
             //Validate input
-            while(price == 0 || price == null)
+            while (price == 0 || price == null)
             {
                 tempPrice = 0;
                 Console.WriteLine("Mata in produktens pris:");
@@ -231,7 +229,7 @@ namespace ConsoleCouture
 
                 if (decimal.TryParse(sInput.Trim(), NumberStyles.Currency, culture, out tempPrice) && tempPrice > 0)
                 {
-                    if(tempPrice > 214748)
+                    if (tempPrice > 214748)
                     {
                         Console.WriteLine("Pris för högt, försök igen.");
                     }
@@ -273,6 +271,10 @@ namespace ConsoleCouture
                 {
                     return false;
                 }
+                else if (String.IsNullOrWhiteSpace(sInput))
+                {
+                    Console.WriteLine("Beskrivningen måste ha ett innehåll.");
+                }
                 else
                 {
                     info = sInput.Trim();
@@ -304,6 +306,26 @@ namespace ConsoleCouture
                 }
             }
             return true;
+        }
+
+        private static void GetCategoriesString(out string categoriesString, out List<Models.Category> categoriesList)
+        {
+            categoriesString = "Tillgängliga kategorier:\n";
+            categoriesString += $"{"0",-5}{"Utan kategori"}\n";
+
+            //Get categories
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var categories = from category in db.Categories
+                                 select category;
+
+                categoriesList = categories.ToList();
+
+                foreach (var category in categoriesList)
+                {
+                    categoriesString += $"{category.Id,-5}{category.Name}\n";
+                }
+            }
         }
 
         private static bool AddCategory()
@@ -486,6 +508,167 @@ namespace ConsoleCouture
                 {
                     Console.WriteLine(e.Message);
                     System.Threading.Thread.Sleep(7000);
+                }
+            }
+            return true;
+        }
+
+        private static bool RemoveProduct()
+        {
+            ProductView.ListAllProducts();
+            string sInput;
+            int selection = 0;
+            bool isChoosing = true;
+
+            //Choose product to remove
+            while(isChoosing)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Skriv in id:et på en produkt för att ta bort den.");
+                Console.WriteLine("Skriv in Q för att avsluta");
+                Console.WriteLine("Skriv in M för att gå tillbaka till huvudmenyn");
+
+                sInput = Console.ReadLine();
+
+                if (int.TryParse(sInput, out selection))
+                {
+                    isChoosing = false;
+                }
+                else if(sInput == "M" || sInput == "m")
+                {
+                    return true;
+                }
+                else if(sInput == "Q" || sInput == "q")
+                {
+                    return false;
+                }
+                else
+                {
+                    Console.WriteLine("Ogiltig inmatning, försök igen.");
+                }
+            }
+
+            //Actually remove the product
+            var affectedRows = 0;
+
+            var sql = $"DELETE FROM [Products] WHERE Id = {selection}";
+
+            using (var connection = new SqlConnection(connString))
+            {
+                try
+                {
+                    affectedRows = connection.Execute(sql);
+                    if (affectedRows > 0)
+                    {
+                        Console.WriteLine("Produkt borttagen.");
+                        System.Threading.Thread.Sleep(3000);
+                        return true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    System.Threading.Thread.Sleep(7000);
+                    return true;
+                }
+            }
+            return true;
+        }
+
+        private static bool RenameCategory()
+        {
+            GetCategoriesString(out string categoriesString, out _);
+            Console.WriteLine();
+            Console.WriteLine(categoriesString);
+            string sInput;
+            int selection = 0;
+            string name = "";
+            bool isChoosing = true;
+
+            //Choose category to remove
+            while (isChoosing)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Skriv in id:et på en kategori för att ändra på den.");
+                Console.WriteLine("Skriv in Q för att avsluta");
+                Console.WriteLine("Skriv in M för att gå tillbaka till huvudmenyn");
+
+                sInput = Console.ReadLine();
+
+                if (int.TryParse(sInput, out selection))
+                {
+                    isChoosing = false;
+                }
+                else if (sInput == "M" || sInput == "m")
+                {
+                    return true;
+                }
+                else if (sInput == "Q" || sInput == "q")
+                {
+                    return false;
+                }
+                else
+                {
+                    Console.WriteLine("Ogiltig inmatning, försök igen.");
+                }
+            }
+
+            //Choose new name
+            isChoosing = true;
+            while (isChoosing)
+            {
+                Console.WriteLine();
+                Console.WriteLine("Skriv in kategorins nya namn.");
+                Console.WriteLine("Skriv in Q för att avsluta");
+                Console.WriteLine("Skriv in M för att gå tillbaka till huvudmenyn");
+
+                sInput = Console.ReadLine();
+
+                if (sInput.Length > 30)
+                {
+                    Console.WriteLine("För långt namn, försök igen.");
+                }
+                else if (String.IsNullOrWhiteSpace(sInput))
+                {
+                    Console.WriteLine("Namnet måste ha ett innehåll.");
+                }
+                else if (sInput == "M" || sInput == "m")
+                {
+                    return true;
+                }
+                else if (sInput == "Q" || sInput == "q")
+                {
+                    return false;
+                }          
+                else
+                {
+                    name = sInput;
+                    isChoosing = false;
+                }
+            }
+
+            //Actually rename the category
+            var affectedRows = 0;
+
+            var sql = $"UPDATE [Categories] SET [Name] = '{name}' WHERE Id = {selection}";
+
+            using (var connection = new SqlConnection(connString))
+            {
+                try
+                {
+                    affectedRows = connection.Execute(sql);
+                    if (affectedRows > 0)
+                    {
+                        Console.WriteLine($"Kategorin ändrade namn till {name}.");
+                        System.Threading.Thread.Sleep(3000);
+                        return true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                    System.Threading.Thread.Sleep(7000);
+                    return true;
                 }
             }
             return true;
