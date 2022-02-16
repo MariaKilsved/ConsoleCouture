@@ -44,31 +44,42 @@ namespace ConsoleCouture
         {
             string sRet = "I KUNDVAGNEN:\n";
 
-            foreach (var x in cartList)
+            if(cartList.Count < 1)
             {
-                sRet += $"{x.cartItem.ProductId,-5}{x.cartItem.ProductName} ({x.cartItem.Size})\n{x.cartItem.Price:C2}\tAntal: {x.quantity}\n\n";
+                sRet += $"Kundvagnen är tom.\n";
+            }
+            else
+            {
+                foreach (var x in cartList)
+                {
+                    sRet += $"{x.cartItem.StockId,-5}{x.cartItem.ProductName} ({x.cartItem.Size})\n{x.cartItem.Price:C2}\tAntal: {x.quantity}\n\n";
+                }
+
+                //Calculate sum
+                decimal sum = SumPrice();
+
+                sRet += $"Summa: {sum:C2}\n";
+                sRet += $"Moms: {(sum * VAT):C2}\n";
+                sRet += $"Totalt: {(sum * (1 + VAT)):C2}\n";
             }
 
-            //Calculate sum
-            decimal sum = SumPrice();
-
-            sRet += $"Summa: {sum:C2}\n";
-            sRet += $"Moms: {(sum * VAT):C2}\n";
-            sRet += $"Totalt: {(sum * (1 + VAT)):C2}\n";
             return sRet;
         }
 
         public bool CartMenu()
         {
-            Console.WriteLine();
-            Console.WriteLine("Mata in C för att gå till kassan.");
-            Console.WriteLine("Välj M för att gå tillbaka till huvudmenyn");
-            Console.WriteLine("Tryck Q för att avsluta");
             string sInput = "";
 
             while(true)
             {
+                Console.WriteLine(ToString());
+                Console.WriteLine();
+                Console.WriteLine("Skriv in ett id för att modifiera.");
+                Console.WriteLine("Mata in C för att gå till kassan.");
+                Console.WriteLine("Välj M för att gå tillbaka till huvudmenyn");
+                Console.WriteLine("Tryck Q för att avsluta");
                 sInput = Console.ReadLine();
+                Console.WriteLine();
 
                 if(sInput == "M" || sInput == "m")
                 {
@@ -95,8 +106,25 @@ namespace ConsoleCouture
                 }
                 else
                 {
-                    Console.WriteLine("Ogiltigt alternativ. Försök igen.");
+                    int.TryParse(sInput, out int selection);
+                    bool foundInCart = false;
+
+                    foreach (var item in cartList)
+                    {
+                        if (selection == item.cartItem.StockId)
+                        {
+                            Console.WriteLine($"Du har valt {item.cartItem.ProductName} ({item.cartItem.Size})");
+                            IncreaseOrReduceMenu(item.cartItem.StockId);
+                            foundInCart = true;
+                            break;
+                        }
+                    }
+                    if(!foundInCart)
+                    {
+                        Console.WriteLine("Ogiltigt alternativ. Försök igen.");
+                    }
                 }
+                Console.WriteLine();
             }
         }
 
@@ -142,7 +170,7 @@ namespace ConsoleCouture
             }
         }
 
-        public bool Remove(int stockId)
+        public bool ReduceQuantity(int stockId)
         {
             for(int i = 0; i < cartList.Count; i++)
             {
@@ -152,10 +180,9 @@ namespace ConsoleCouture
 
                     if(cartList[i].quantity < 1)
                     {
+                        Console.WriteLine($"{cartList[i].cartItem.ProductName} ({cartList[i].cartItem.Size}) togs bort ur kundvagnen.");
                         cartList.RemoveAt(i);
                     }
-                    Console.WriteLine($"{cartList[i].cartItem.ProductName} ({cartList[i].cartItem.Size}) togs bort ur kundvagnen.");
-                    System.Threading.Thread.Sleep(3000);
                     return true;
                 }
             }
@@ -177,6 +204,21 @@ namespace ConsoleCouture
             return count;
         }
         */
+
+        public bool RemoveAll(int stockId)
+        {
+            for (int i = 0; i < cartList.Count; i++)
+            {
+                if (cartList[i].cartItem.StockId == stockId)
+                {
+                    Console.WriteLine($"{cartList[i].cartItem.ProductName} ({cartList[i].cartItem.Size}) togs bort ur kundvagnen.");
+                    cartList.RemoveAt(i);
+
+                    return true;
+                }
+            }
+            return false;
+        }
 
         public bool IncreaseQuantity(int stockId)
         {
@@ -203,6 +245,49 @@ namespace ConsoleCouture
             }
 
             return false;
+        }
+
+        public void IncreaseOrReduceMenu(int stockId)
+        {
+            Console.WriteLine("Mata in ett alternativ:");
+            Console.WriteLine("[1] Öka antalet av produkten");
+            Console.WriteLine("[2] Minska antalet av produkten");
+            Console.WriteLine("[3] Ta bort produkten");
+            Console.WriteLine("[4] Avbryt");
+            string sInput;
+
+            while(true)
+            {
+                sInput = Console.ReadLine();
+                if (int.TryParse(sInput, out int selection) && selection == 1)
+                {
+                    bool success = IncreaseQuantity(stockId);
+                    if(!success)
+                    {
+                        Console.WriteLine("Slut på lager!");
+                    }
+                    break;
+                }
+                else if(int.TryParse(sInput, out selection) && selection == 2)
+                {
+                    bool success = ReduceQuantity(stockId);
+                    break;
+                }
+                else if(int.TryParse(sInput, out selection) && selection == 3)
+                {
+                    bool success = RemoveAll(stockId);
+                    break;
+                }
+                else if (int.TryParse(sInput, out selection) && selection == 4)
+                {
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Ogiltig inmatning, försök igen.");
+                }
+
+            }
         }
     }
 }

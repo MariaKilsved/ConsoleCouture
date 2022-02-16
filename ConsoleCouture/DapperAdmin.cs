@@ -686,16 +686,11 @@ namespace ConsoleCouture
         #region statistics
         public static bool PrintStats()
         {
-            /*
-            using (var db = new Models.ConsoleCoutureContext())
-            {
-                var products = from product in db.Products
-                               join
-                               detail in db.OrderDetails on product.Id equals detail.ProductId
-                               select new Models.OrderDetailsProductQuery { ProductName = product.Name, Quantity = detail.Quantity, Price = product.Price};
-            }
-            */
 
+
+            /*
+            NON-FUNCTIONAL CODE
+             
             var sql = "SELECT Products.Name, SUM(CAST(OrderDetails.Quantity AS bigint)), SUM(CAST(Products.Price AS bigint)) FROM Products JOIN OrderDetails ON Products.Id = OrderDetails.ProductId GROUP BY Products.Name ORDER BY SUM(CAST(Products.Price AS bigint)) DESC";
 
             var prodDetails = new List<Models.OrderDetailsProductQuery>();
@@ -709,6 +704,11 @@ namespace ConsoleCouture
             {
                 Console.WriteLine($"{pd.ProductName}\tAntal sålda: {pd.SumQuantity}\tTotalt pris: {pd.SumPrice}");
             }
+             
+            */
+
+
+
 
             Console.WriteLine();
             Console.WriteLine("Skriv in M för att återgå till menyn eller Q för att avsluta.");

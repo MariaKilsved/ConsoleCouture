@@ -349,7 +349,7 @@ namespace ConsoleCouture
                 }
             }
 
-
+            Console.WriteLine();
             Console.WriteLine("Välkommen åter!");
             Console.WriteLine("Tryck på valfri knapp för att återgå till menyn.");
             Console.ReadKey();

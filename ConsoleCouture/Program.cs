@@ -69,8 +69,6 @@ namespace ConsoleCouture
                         break;
                     case 6:
                         Console.Clear();
-                        Console.WriteLine(cart.ToString());
-                        Console.WriteLine();
                         Continue = cart.CartMenu();
                         break;
                     case 7:
