@@ -70,7 +70,8 @@ namespace ConsoleCouture
                     case 6:
                         Console.Clear();
                         Console.WriteLine(cart.ToString());
-                        Console.ReadKey();
+                        Console.WriteLine();
+                        Continue = cart.CartMenu();
                         break;
                     case 7:
                         Console.Clear();

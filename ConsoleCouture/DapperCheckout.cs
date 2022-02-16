@@ -32,6 +32,9 @@ namespace ConsoleCouture
             }
 
             //Print options
+            Console.WriteLine();
+            Console.WriteLine("Leveransalternativ");
+            Console.WriteLine("Mata in ett id-nummer som motsvarar det alternativ du vill ha:");
             Console.WriteLine($"{"Id",-5}{"Namn",-85}{"Pris"}");
             foreach (var option in options)
             {
@@ -41,7 +44,7 @@ namespace ConsoleCouture
             Console.WriteLine();
 
             //Choose option
-            Console.WriteLine("Mata in ett id-nummer som motsvarar det alternativ du vill ha:");
+            Console.WriteLine();
             string sInput;
             int selection;
             while(true)
@@ -73,7 +76,10 @@ namespace ConsoleCouture
             }
 
             //Print options
-            Console.WriteLine($"{"Id",-5}{"Namn",-85}{"Pris"}");
+            Console.WriteLine();
+            Console.WriteLine("Betalningsalternativ");
+            Console.WriteLine("Mata in ett id-nummer som motsvarar det alternativ du vill ha:");
+            Console.WriteLine($"{"Id",-5}{"Namn",-85}");
             foreach (var option in options)
             {
                 Console.WriteLine($"{option.Id,-5}{option.Name,-85}");
@@ -82,7 +88,7 @@ namespace ConsoleCouture
             Console.WriteLine();
 
             //Choose option
-            Console.WriteLine("Mata in ett id-nummer som motsvarar det alternativ du vill ha:");
+            Console.WriteLine();
             string sInput;
             int selection;
             while (true)
@@ -105,6 +111,7 @@ namespace ConsoleCouture
         public bool Login()
         {
             string sInput;
+            int tempId;
             Console.WriteLine("Logga in");
 
             var users = new List<Models.CustomerQuery>();
@@ -113,7 +120,7 @@ namespace ConsoleCouture
                 Console.WriteLine("Ange din mailadress:");
                 sInput = Console.ReadLine();
 
-                var sql = $"SELECT * FROM Customers WHERE [Mail] = {sInput}";
+                var sql = $"SELECT * FROM Customers WHERE [Mail] = '{sInput}'";
                 using (var connection = new SqlConnection(connString))
                 {
                     connection.Open();
@@ -121,6 +128,7 @@ namespace ConsoleCouture
 
                     if(users.Count > 0)
                     {
+                        tempId = users[^1].Id;
                         break;
                     }
                     else
@@ -132,23 +140,26 @@ namespace ConsoleCouture
             Console.WriteLine();
 
             int attempts = 3;
-            var salts = new List<string>();
-            while(attempts > 0)
+            var security = new Utility.Security();
+            string hash;
+
+            while (attempts > 0)
             {
                 Console.WriteLine("Ange lösenord:");
                 sInput = Console.ReadLine();
 
                 //The customer that is selected will be the one added to the database last. That is, the final index in the list.
                 //Of course, if the same email hasn't been added multiple times this won't matter.
-                var sql = $"SELECT Salt FROM Salts " +
-                    $"JOIN [Customers] ON Customers.SaltId = Salts.Id" +
-                    $"WHERE CustomerId = {users[^1].Id}";
+
+                var sql = $"SELECT * FROM Salts JOIN [Customers] ON Salts.Id = Customers.SaltId WHERE Customers.Id = {tempId}";
                 using (var connection = new SqlConnection(connString))
                 {
                     connection.Open();
-                    salts = connection.Query<string>(sql).ToList();
+                    var salts = connection.Query<Models.PasswordQuery>(sql).ToList(); //ERROR
 
-                    if (users.Count > 0)
+                    hash = security.ComputeHash(Encoding.Unicode.GetBytes(sInput), Encoding.Unicode.GetBytes(salts[^1].Salt));
+
+                    if (hash != null && hash == salts[^1].Password)
                     {
                         customerId = users[^1].Id;
                         Console.WriteLine($"Välkommen, {users[^1].FirstName} {users[^1].LastName}!");
@@ -161,6 +172,7 @@ namespace ConsoleCouture
                     }
                 }
             }
+
             customerId = null;
             Console.WriteLine("Inloggningen misslyckades.");
             return false;
@@ -174,9 +186,9 @@ namespace ConsoleCouture
                 return;
             }
 
-            DateTime orderDate = DateTime.Today;
-            DateTime requiredDate = orderDate.AddDays(20);
-            //DateTime? shippedDate = null;                 //Because the product won't be sent yet, there will be no ShippedDate.
+            DateTime? orderDate = DateTime.Today;
+            DateTime? requiredDate = DateTime.Today.AddDays(20);
+            DateTime? shippedDate = null;                           //Because the product won't be sent yet, there will be no ShippedDate.
             decimal? freight;
             string receiverName = null;
             string shipAddress = null;
@@ -184,6 +196,7 @@ namespace ConsoleCouture
             string shipCity = null;
             string shipCountry = null;
 
+            Console.WriteLine();
             Console.WriteLine("Vänligen ange mottagarens adress.");
 
             receiverName = ObtainStringInput("Ange mottagarens namn:", 45);
@@ -200,7 +213,7 @@ namespace ConsoleCouture
 
             //Place the order
             //Orders table
-            var sql = $"INSERT INTO [Orders]([CustomerId], [OrderDate], [RequiredDate], [Freight], [ReceiverName], [ShipAddress], [ShipPostalCode], [ShipCity], [ShipCountry]) VALUES ({customerId}, '{orderDate}', {requiredDate}, {freight}, '{receiverName}', '{shipAddress}', '{shipPostalCode}', '{shipCity}', '{shipCountry}')";
+            var sql = $"INSERT INTO [Orders]([CustomerId], [OrderDate], [RequiredDate], [ShippedDate], [Freight], [ReceiverName], [ShipAddress], [ShipPostalCode], [ShipCity], [ShipCountry]) VALUES ({customerId}, '{orderDate}', '{requiredDate}', '{shippedDate}', {freight},'{receiverName}', '{shipAddress}', '{shipPostalCode}', '{shipCity}', '{shipCountry}')";
             int affectedRows = 0;
 
             using (var connection = new SqlConnection(connString))
@@ -217,6 +230,7 @@ namespace ConsoleCouture
                 }
             }
 
+            Console.WriteLine("Hämtar användarid...");
             //Get the order id back. It will be the latest order. A transaction would have been nice...
             sql = $"SELECT Id FROM Orders WHERE [CustomerId] = {customerId}";
 
@@ -229,6 +243,7 @@ namespace ConsoleCouture
 
 
             //OrderDetails and Stock
+            Console.WriteLine("Uppdaterar lagerstatus...");
             if (affectedRows > 0)
             {
                 foreach(var item in cartList)
@@ -253,7 +268,7 @@ namespace ConsoleCouture
                     }
 
                     //Add to OrderDetails
-
+                    Console.WriteLine("Sparar orderhistorik...");
                     sql = $"INSERT INTO OrderDetails(OrderId, ProductId, UnitPrice, Quantity, Discount) VALUES ({orderId}, {item.cartItem.ProductId}, {item.cartItem.Price}, {item.quantity}, {discount})";
 
                     affectedRows = 0;
@@ -263,6 +278,7 @@ namespace ConsoleCouture
                         try
                         {
                             affectedRows = connection.Execute(sql);
+                            Console.WriteLine("Order mottagen.");
                         }
                         catch (Exception e)
                         {
@@ -273,7 +289,6 @@ namespace ConsoleCouture
                     }
                 }
             }
-            Console.WriteLine("Order mottagen.");
             Console.WriteLine("Välkommen åter!");
         }
 
