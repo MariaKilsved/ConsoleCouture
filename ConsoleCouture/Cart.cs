@@ -82,9 +82,16 @@ namespace ConsoleCouture
                 {
                     //Could add a discount here later...
                     var checkout = new DapperCheckout();
-                    checkout.PlaceOrder(cartList);
+                    bool Continue = checkout.PlaceOrder(cartList);
                     Clear();
-                    return true;
+                    if(Continue)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
                 }
                 else
                 {

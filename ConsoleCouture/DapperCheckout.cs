@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Dapper;
 using Microsoft.Data.SqlClient; //VisualStudio recommended change to this from just using Data.SqlClient
 
+
 namespace ConsoleCouture
 {
     class DapperCheckout
@@ -14,6 +15,7 @@ namespace ConsoleCouture
         private int? customerId;
         private int? orderId;
         private float? discount;
+        const decimal VAT = 0.12m;
 
         public DapperCheckout(float? discount = 0f)
         {
@@ -44,7 +46,6 @@ namespace ConsoleCouture
             Console.WriteLine();
 
             //Choose option
-            Console.WriteLine();
             string sInput;
             int selection;
             while(true)
@@ -84,8 +85,6 @@ namespace ConsoleCouture
             {
                 Console.WriteLine($"{option.Id,-5}{option.Name,-85}");
             }
-
-            Console.WriteLine();
 
             //Choose option
             Console.WriteLine();
@@ -178,14 +177,23 @@ namespace ConsoleCouture
             return false;
         }
 
-        public void PlaceOrder(List<Models.CartItemQueryGroup> cartList)
+        public bool PlaceOrder(List<Models.CartItemQueryGroup> cartList)
         {
+            //Login. If login fails, abort.
             bool login = Login();
             if(!login)
             {
-                return;
+                return true;
             }
 
+            //Sum cost of all products
+            decimal sum = 0;
+            foreach (var product in cartList)
+            {
+                sum += (product.cartItem.Price ?? 0);
+            }
+
+            //Variables to be used
             DateTime? orderDate = DateTime.Today;
             DateTime? requiredDate = DateTime.Today.AddDays(20);
             DateTime? shippedDate = null;                           //Because the product won't be sent yet, there will be no ShippedDate.
@@ -196,6 +204,7 @@ namespace ConsoleCouture
             string shipCity = null;
             string shipCountry = null;
 
+            //Obtain receiver data
             Console.WriteLine();
             Console.WriteLine("Vänligen ange mottagarens adress.");
 
@@ -205,15 +214,63 @@ namespace ConsoleCouture
             shipCity = ObtainStringInput("Ange mottagarens postort:", 50);
             shipCountry = ObtainStringInput("Ange mottagarens land:", 50);
 
-            freight = SelectDeliveryOptions().Price;
+            //Select delivery and payment options
+            var delivery = SelectDeliveryOptions();
             var payment = SelectPaymentOptions();           //Nothing else to do with this...
+
+            //Freight cost from delivery option
+            freight = delivery.Price;
+
+            //Print order summary
+            Console.Clear();
+            Console.WriteLine("Orderuppgifter:");
+
+            Console.WriteLine($"Summa: {sum:C2}");
+            Console.WriteLine($"Moms: {(sum * VAT):C2}");
+            Console.WriteLine($"Totalt: {(sum * (1 + VAT)):C2}");
+
+            Console.WriteLine();
+
+            Console.WriteLine("Leveransadress:");
+            Console.WriteLine(receiverName);
+            Console.WriteLine(shipAddress);
+            Console.WriteLine($"{shipPostalCode} {shipCity}");
+            Console.WriteLine(shipCountry);
+
+            Console.WriteLine();
+            Console.WriteLine("Välj A för att acceptera ordern, M för att gå tillbaka till menyn eller Q för att avsluta.");
+
+            string sInput;
+            while(true)
+            {
+                sInput = Console.ReadLine();
+                if(sInput == "Q" || sInput == "q")
+                {
+                    return false;
+                }
+                else if(sInput == "M" || sInput == "m")
+                {
+                    return true;
+                }
+                else if(sInput == "A" || sInput == "a")
+                {
+                    break;
+                }
+                else
+                {
+                    Console.WriteLine("Ogiltigt alternativ, försök igen.");
+                }
+            }
+
+
 
             Console.Clear();
             Console.WriteLine("Behandlar order, vänligen vänta...");
 
             //Place the order
+
             //Orders table
-            var sql = $"INSERT INTO [Orders]([CustomerId], [OrderDate], [RequiredDate], [ShippedDate], [Freight], [ReceiverName], [ShipAddress], [ShipPostalCode], [ShipCity], [ShipCountry]) VALUES ({customerId}, '{orderDate}', '{requiredDate}', '{shippedDate}', {freight},'{receiverName}', '{shipAddress}', '{shipPostalCode}', '{shipCity}', '{shipCountry}')";
+            var sql = $"INSERT INTO [Orders]([CustomerId], [OrderDate], [RequiredDate], [ShippedDate], [Freight], [ReceiverName], [ShipAddress], [ShipPostalCode], [ShipCity], [ShipCountry]) VALUES ({customerId}, '{orderDate}', '{requiredDate}', '{shippedDate}', {Decimal.Round(freight ?? 0)}, '{receiverName}', '{shipAddress}', '{shipPostalCode}', '{shipCity}', '{shipCountry}')";
             int affectedRows = 0;
 
             using (var connection = new SqlConnection(connString))
@@ -224,20 +281,22 @@ namespace ConsoleCouture
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
-                    System.Threading.Thread.Sleep(7000);
-                    return;
+                    Console.WriteLine("INSERT INTO [Orders] misslyckades\n" + e.Message);
+                    Console.WriteLine();
+                    System.Threading.Thread.Sleep(10000);
+                    Console.ReadKey();
+                    return true;
                 }
             }
 
-            Console.WriteLine("Hämtar användarid...");
+            Console.WriteLine("Hämtar orderid...");
             //Get the order id back. It will be the latest order. A transaction would have been nice...
             sql = $"SELECT Id FROM Orders WHERE [CustomerId] = {customerId}";
 
             using (var connection = new SqlConnection(connString))
             {
                 connection.Open();
-                orderId = connection.Query<int>(sql).ToList()[^1];      //orderId is a field in the DapperCheckout class
+                orderId = connection.Query<int>(sql).ToList()[^1];
             }
 
 
@@ -261,15 +320,15 @@ namespace ConsoleCouture
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine(e.Message);
-                            System.Threading.Thread.Sleep(7000);
-                            return;
+                            Console.WriteLine("UPDATE Stock misslyckades\n" + e.Message);
+                            System.Threading.Thread.Sleep(10000);
+                            return true;
                         }
                     }
 
                     //Add to OrderDetails
                     Console.WriteLine("Sparar orderhistorik...");
-                    sql = $"INSERT INTO OrderDetails(OrderId, ProductId, UnitPrice, Quantity, Discount) VALUES ({orderId}, {item.cartItem.ProductId}, {item.cartItem.Price}, {item.quantity}, {discount})";
+                    sql = $"INSERT INTO OrderDetails(OrderId, ProductId, UnitPrice, Quantity, Discount) VALUES ({orderId}, {item.cartItem.ProductId}, {Decimal.Round(item.cartItem.Price ?? 0)}, {item.quantity}, {discount})";
 
                     affectedRows = 0;
 
@@ -282,14 +341,19 @@ namespace ConsoleCouture
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine(e.Message);
-                            System.Threading.Thread.Sleep(7000);
-                            return;
+                            Console.WriteLine("INSERT INTO OrderDetails misslyckades\n" + e.Message);
+                            System.Threading.Thread.Sleep(10000);
+                            return true;
                         }
                     }
                 }
             }
+
+
             Console.WriteLine("Välkommen åter!");
+            Console.WriteLine("Tryck på valfri knapp för att återgå till menyn.");
+            Console.ReadKey();
+            return true;
         }
 
         public static string ObtainStringInput(string title, int maxLength)

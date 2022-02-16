@@ -25,6 +25,7 @@ namespace ConsoleCouture
         //- Försäljning sorterat på leverantörer
         //- Populäraste kategorin
 
+        #region menu
         public static bool AdminMenuOptions(out int selection)
         {
             string sInput;
@@ -40,11 +41,12 @@ namespace ConsoleCouture
                 Console.WriteLine("[3] Lägg till leverantör");
                 Console.WriteLine("[4] Ta bort produkt");
                 Console.WriteLine("[5] Byt namn på produktkategori");
+                Console.WriteLine("[6] Visa statistik");
                 Console.WriteLine("[Q] Avsluta");
 
                 sInput = Console.ReadLine();
 
-                if (int.TryParse(sInput, out selection) && selection > 0 && selection < 6)
+                if (int.TryParse(sInput, out selection) && selection > 0 && selection < 7)
                 {
                     return true;
                 }
@@ -79,6 +81,9 @@ namespace ConsoleCouture
                 case 5:
                     Continue = RenameCategory();
                     break;
+                case 6:
+                    Continue = PrintStats();
+                    break;
                 default:
                     break;
             }
@@ -86,6 +91,9 @@ namespace ConsoleCouture
             return Continue;
         }
 
+        #endregion
+
+        #region actions
         private static bool AddProduct()
         {
             Console.WriteLine("Lägg till produkt");
@@ -673,8 +681,60 @@ namespace ConsoleCouture
             }
             return true;
         }
+        #endregion
 
+        #region statistics
+        public static bool PrintStats()
+        {
+            /*
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var products = from product in db.Products
+                               join
+                               detail in db.OrderDetails on product.Id equals detail.ProductId
+                               select new Models.OrderDetailsProductQuery { ProductName = product.Name, Quantity = detail.Quantity, Price = product.Price};
+            }
+            */
 
+            var sql = "SELECT Products.Name, SUM(CAST(OrderDetails.Quantity AS bigint)), SUM(CAST(Products.Price AS bigint)) FROM Products JOIN OrderDetails ON Products.Id = OrderDetails.ProductId GROUP BY Products.Name ORDER BY SUM(CAST(Products.Price AS bigint)) DESC";
+
+            var prodDetails = new List<Models.OrderDetailsProductQuery>();
+            using (var connection = new SqlConnection(connString))
+            {
+                connection.Open();
+                prodDetails = connection.Query<Models.OrderDetailsProductQuery>(sql).ToList();
+            }
+
+            foreach (var pd in prodDetails)
+            {
+                Console.WriteLine($"{pd.ProductName}\tAntal sålda: {pd.SumQuantity}\tTotalt pris: {pd.SumPrice}");
+            }
+
+            Console.WriteLine();
+            Console.WriteLine("Skriv in M för att återgå till menyn eller Q för att avsluta.");
+
+            while (true)
+            {
+                string sInput = Console.ReadLine();
+
+                if (sInput == "Q" || sInput == "q")
+                {
+                    return false;
+                }
+                else if (sInput == "M" || sInput == "m")
+                {
+                    return true;
+                }
+                else
+                {
+                    Console.WriteLine("Ogiltig inmatning. Försök igen.");
+                }
+            }
+        }
+
+        #endregion
+
+        #region validation
         private static string ObtainStringInput(string title, int maxLength, out bool quit, out bool returnToMenu)
         {
             string sInput = "";
@@ -800,6 +860,7 @@ namespace ConsoleCouture
             }
             return sInput;
         }
+        #endregion
 
 
     }
