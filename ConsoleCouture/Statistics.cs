@@ -21,13 +21,16 @@ namespace ConsoleCouture
                 Console.WriteLine("Alternativ:");
                 Console.WriteLine("[1] Försäljningsinformation");
                 Console.WriteLine("[2] Lagersaldo");
+                Console.WriteLine("[3] Produkters popularitet sorterat på stad");
+                Console.WriteLine("[4] Produkters popularitet sorterat på kön");
+                Console.WriteLine("[5] Produkters popularitet sorterat på åldersgrupp");
                 Console.WriteLine("[M] Tillbaka till huvudmenyn");
                 Console.WriteLine("[Q] Avsluta");
 
                 sInput = Console.ReadLine();
 
 
-                if (int.TryParse(sInput, out selection) && selection > 0 && selection < 7)
+                if (int.TryParse(sInput, out selection) && selection > 0 && selection < 6)
                 {
                     ExecuteStatisticsMenu(selection);
                     Console.WriteLine();
@@ -64,6 +67,18 @@ namespace ConsoleCouture
                     PrintBalance();
                     Console.WriteLine();
                     break;
+                case 3:
+                    PrintPopularityByCity();
+                    Console.WriteLine();
+                    break;
+                case 4:
+                    PrintPopularityByGender();
+                    Console.WriteLine();
+                    break;
+                case 5:
+                    PrintPopularityByAge();
+                    Console.WriteLine();
+                    break;
                 default:
                     break;
             }
@@ -84,17 +99,18 @@ namespace ConsoleCouture
 
                 var groupedProdDetails = (from prods in prodDetails.ToList()
                                           where prods.Quantity > 0
+                                          orderby (prods.Price * prods.Quantity) descending
                                           group prods by prods.ProductName).ToList();
 
                 Console.WriteLine();
                 Console.WriteLine("Sålda produkter");
-                Console.WriteLine($"{"Produktnamn",-60}{"Antal",-20}{"Totalt pris"}");
+                Console.WriteLine($"{"Produktnamn",-85}{"Antal",-20}{"Totalt pris"}");
                 foreach (var group in groupedProdDetails)
                 {
                     long sumPrice = group.Sum(prod => (long)prod.Price);
                     long sumQuantity = group.Sum(prod => (long)prod.Quantity);
 
-                    Console.WriteLine($"{group.Key,-60}{(sumQuantity + " st"),-20}{sumPrice:C2}");
+                    Console.WriteLine($"{group.Key,-85}{(sumQuantity + " st"),-20}{sumPrice:C2}");
                 }
             }
         }
@@ -108,22 +124,23 @@ namespace ConsoleCouture
                                   join
                                     stock in db.Stocks on product.Id equals stock.ProductId
                                   where stock.InStock > 0 && product.Price > 0
-                                  select new { ProductName = product.Name, Price = product.Price, Quantity = stock.InStock, TotalPrice = (long)(product.Price * stock.InStock) };
+                                  select new { ProductName = product.Name, Quantity = stock.InStock, TotalPrice = (long)(product.Price * stock.InStock) };
 
 
                 var groupedProdStock = (from prods in prodStock.ToList()
+                                          orderby prods.TotalPrice descending
                                           group prods by prods.ProductName).ToList();
 
 
                 long balance = 0;
                 Console.WriteLine();
                 Console.WriteLine("Lagersaldo (värde av produkter på lager):");
-                Console.WriteLine($"{"Produktnamn",-60}{"Totalt värde"}");
+                Console.WriteLine($"{"Produktnamn",-85}{"Totalt värde"}");
                 foreach (var group in groupedProdStock)
                 {
                     long sumPrice = group.Sum(prod => prod.TotalPrice);
                     balance += sumPrice;
-                    Console.WriteLine($"{group.Key,-60}{sumPrice:C2}");
+                    Console.WriteLine($"{group.Key,-85}{sumPrice:C2}");
                 }
 
                 Console.WriteLine();
@@ -131,6 +148,157 @@ namespace ConsoleCouture
             }
         }
 
+        private static void PrintPopularityByCity()
+        {
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var result = from
+                                    product in db.Products
+                                  join
+                                    details in db.OrderDetails on product.Id equals details.ProductId
+                                  join
+                                    orders in db.Orders on details.OrderId equals orders.Id
+                                  where details.Quantity > 0
+                                  select new { ProductName = product.Name, Quantity = details.Quantity, City = orders.ShipCity, TotalPrice = (long)(product.Price * details.Quantity) };
 
+
+                var groupedResult = (from prods in result.ToList()
+                                          orderby prods.City
+                                          group prods by prods.City).ToList();
+
+                Console.WriteLine();
+                Console.WriteLine("Mest sålda produkter per stad:");
+                foreach (var group in groupedResult)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"{group.Key}:");
+                    Console.WriteLine($"{"Produktnamn",-85}{"Antal",-20}{"Totalt pris"}");
+                    foreach (var pd in group)
+                    {
+                        Console.WriteLine($"{pd.ProductName,-85}{(pd.Quantity + " st"), -20}{pd.TotalPrice:C2}");
+                    }
+                }
+            }
+        }
+
+        private static void PrintPopularityByGender()
+        {
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var result = from
+                               product in db.Products
+                             join
+                               details in db.OrderDetails on product.Id equals details.ProductId
+                             join
+                               orders in db.Orders on details.OrderId equals orders.Id
+                             join
+                               customers in db.Customers on orders.CustomerId equals customers.Id
+                             where details.Quantity > 0 && customers.Gender != null
+                             select new { ProductName = product.Name, Quantity = details.Quantity, TotalPrice = (long)(product.Price * details.Quantity), Gender = customers.Gender };
+
+                var groupedResult = (from prods in result.ToList()
+                                     orderby prods.Gender, prods.ProductName
+                                     group prods by prods.Gender).ToList();
+
+
+                Console.WriteLine();
+                Console.WriteLine("Mest sålda produkter per kön:");
+                foreach (var group in groupedResult)
+                {
+                    Console.WriteLine();
+                    if(group.Key.Contains('M'))
+                    {
+                        Console.WriteLine("---Män---");
+                    }
+                    else if (group.Key.Contains('F'))
+                    {
+                        Console.WriteLine("---Kvinnor---");
+                    }
+                    else if (group.Key.Contains("NB"))
+                    {
+                        Console.WriteLine("---Icke-binära---");
+                    }
+                    else
+                    {
+                        Console.WriteLine("---Odefinierade---");
+                    }
+
+                    Console.WriteLine($"{"Produktnamn",-85}{"Antal",-20}{"Totalt pris"}");
+                    foreach (var pd in group)
+                    {
+                        Console.WriteLine($"{pd.ProductName,-85}{(pd.Quantity + " st"),-20}{pd.TotalPrice:C2}");
+                    }
+                }
+            }
+        }
+
+        private static string CalculateAgeGroup(DateTime? birthdate)
+        {
+            //Calculate exact age:
+            DateTime birthdate2 = birthdate ?? DateTime.MinValue;
+
+
+            var today = DateTime.Today;
+            var age = today.Year - birthdate2.Year;
+
+            if (birthdate2.Date > today.AddYears(-age))
+            {
+                age--;
+            }
+
+            string sRet = "";
+            int agegroup = (int)Math.Floor((decimal)age / 10) * 10;
+
+            if (agegroup == 0 || agegroup == 10)
+            {
+                sRet = "Barn och ungdom";
+            }
+            else if(agegroup > 200)
+            {
+                sRet += "Uppgifter saknas";
+            }
+            else
+            {
+                sRet += agegroup + "-åringar";
+            }
+
+
+            return sRet;
+        }
+
+        private static void PrintPopularityByAge()
+        {
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var result = from
+                                   product in db.Products
+                             join
+                               details in db.OrderDetails on product.Id equals details.ProductId
+                             join 
+                               orders in db.Orders on details.OrderId equals orders.Id
+                             join
+                               customers in db.Customers on orders.CustomerId equals customers.Id
+                             where details.Quantity > 0
+                             select new { BirthDate = CalculateAgeGroup(customers.BirthDate), ProductName = product.Name, Quantity = details.Quantity, TotalPrice = (long)(product.Price * details.Quantity) };
+
+
+                var groupedResult = (from prods in result.ToList()
+                                     orderby prods.BirthDate, prods.TotalPrice descending
+                                     group prods by prods.BirthDate).ToList();
+
+                Console.WriteLine();
+                Console.WriteLine("Mest sålda produkter per åldersgrupp:");
+                foreach (var group in groupedResult)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"{group.Key}:");
+                    Console.WriteLine($"{"Produktnamn",-85}{"Antal",-20}{"Totalt pris"}");
+                    foreach (var pd in group)
+                    {
+                        Console.WriteLine($"{pd.ProductName,-85}{(pd.Quantity + " st"),-20}{pd.TotalPrice:C2}");
+                    }
+                }
+            }
+        }
     }
 }
