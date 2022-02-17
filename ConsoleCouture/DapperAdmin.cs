@@ -82,7 +82,7 @@ namespace ConsoleCouture
                     Continue = RenameCategory();
                     break;
                 case 6:
-                    Continue = PrintStats();
+                    Continue = Statistics.StatisticsMenu();
                     break;
                 default:
                     break;
@@ -684,53 +684,9 @@ namespace ConsoleCouture
         #endregion
 
         #region statistics
-        public static bool PrintStats()
-        {
-
-
-            /*
-            NON-FUNCTIONAL CODE
-             
-            var sql = "SELECT Products.Name, SUM(CAST(OrderDetails.Quantity AS bigint)), SUM(CAST(Products.Price AS bigint)) FROM Products JOIN OrderDetails ON Products.Id = OrderDetails.ProductId GROUP BY Products.Name ORDER BY SUM(CAST(Products.Price AS bigint)) DESC";
-
-            var prodDetails = new List<Models.OrderDetailsProductQuery>();
-            using (var connection = new SqlConnection(connString))
-            {
-                connection.Open();
-                prodDetails = connection.Query<Models.OrderDetailsProductQuery>(sql).ToList();
-            }
-
-            foreach (var pd in prodDetails)
-            {
-                Console.WriteLine($"{pd.ProductName}\tAntal sålda: {pd.SumQuantity}\tTotalt pris: {pd.SumPrice}");
-            }
-             
-            */
 
 
 
-
-            Console.WriteLine();
-            Console.WriteLine("Skriv in M för att återgå till menyn eller Q för att avsluta.");
-
-            while (true)
-            {
-                string sInput = Console.ReadLine();
-
-                if (sInput == "Q" || sInput == "q")
-                {
-                    return false;
-                }
-                else if (sInput == "M" || sInput == "m")
-                {
-                    return true;
-                }
-                else
-                {
-                    Console.WriteLine("Ogiltig inmatning. Försök igen.");
-                }
-            }
-        }
 
         #endregion
 

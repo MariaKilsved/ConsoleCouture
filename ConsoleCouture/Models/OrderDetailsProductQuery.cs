@@ -9,8 +9,8 @@ namespace ConsoleCouture.Models
     class OrderDetailsProductQuery
     {
         public string ProductName { get; set; }
-        public long? SumQuantity { get; set; }
-        public long? SumPrice { get; set; }
+        public decimal? Quantity { get; set; }
+        public decimal? Price { get; set; }
 
     }
 }
