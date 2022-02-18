@@ -10,6 +10,7 @@ namespace ConsoleCouture
 {
     class DapperUser
     {
+        //Removed personal password since this will be on GitHub...
         //static readonly string connString = "data source=.\\SQLEXPRESS; initial catalog = ConsoleCouture; persist security info = True; Integrated Security = True;";
         static readonly string connString = "data source=tcp:mariak.database.windows.net,1433;Initial Catalog=ConsoleCouture;Persist Security Info=False;User ID=MariaKilsved;Password=*************;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;";
         public static void RegisterUser()
