@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ConsoleCouture
 {
@@ -109,6 +111,8 @@ namespace ConsoleCouture
             Console.WriteLine("╚═╝└─┘┘└┘└─┘└─┘┴─┘└─┘  ╚═╝└─┘└─┘ ┴ └─┘┴└─└─┘");
             Console.ResetColor();
 
+            ShowThreeProducts();
+
             do
             {
                 Console.WriteLine();
@@ -139,6 +143,32 @@ namespace ConsoleCouture
             } while (sInput != "Q" && sInput != "q");
 
             return false;
+        }
+
+        public static void ShowThreeProducts()
+        {
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var products = from product in db.Products
+                               join categories in db.Categories on product.CategoryId equals categories.Id
+                               select new { Name = product.Name, Price = product.Price, Category = categories.Name };
+
+                var groupedProducts = (from prods in products.ToList()
+                                          orderby prods.Price
+                                          group prods by prods.Category).ToList();
+
+
+                Console.WriteLine("Kom in och upptäck våra unika produkter!");
+                Console.WriteLine();
+
+                for(int i = 0; (i < groupedProducts.Count && i < 3); i++)
+                {
+                    var iGroup = groupedProducts[i].ToList();
+
+                    Console.WriteLine($"{iGroup[0].Name, -85}{iGroup[0].Price:C2}");
+                }
+                Console.WriteLine();
+            }
         }
     }
 }
