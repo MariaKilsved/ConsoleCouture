@@ -24,13 +24,18 @@ namespace ConsoleCouture
                 Console.WriteLine("[3] Produkters popularitet sorterat på stad");
                 Console.WriteLine("[4] Produkters popularitet sorterat på kön");
                 Console.WriteLine("[5] Produkters popularitet sorterat på åldersgrupp");
+                Console.WriteLine("[6] Försäljningsinformation sorterat på kategori");
+                Console.WriteLine("[7] Försäljningsinformation sorterat på leverantör");
+                Console.WriteLine("[8] Avslöja män som köpte klänningar eller kjolar");         //Hahahaha
+                Console.WriteLine("[9] Kontaktuppgifter till lönsamma kunder");
+                Console.WriteLine("[10] Kontaktuppgifter till de senast aktiva kunderna");
                 Console.WriteLine("[M] Tillbaka till huvudmenyn");
                 Console.WriteLine("[Q] Avsluta");
 
                 sInput = Console.ReadLine();
 
 
-                if (int.TryParse(sInput, out selection) && selection > 0 && selection < 6)
+                if (int.TryParse(sInput, out selection) && selection > 0 && selection < 11)
                 {
                     ExecuteStatisticsMenu(selection);
                     Console.WriteLine();
@@ -77,6 +82,26 @@ namespace ConsoleCouture
                     break;
                 case 5:
                     PrintPopularityByAge();
+                    Console.WriteLine();
+                    break;
+                case 6:
+                    PrintSalesByCategory();
+                    Console.WriteLine();
+                    break;
+                case 7:
+                    PrintSalesBySupplier();
+                    Console.WriteLine();
+                    break;
+                case 8:
+                    PrintMenBuyingWomensClothing();
+                    Console.WriteLine();
+                    break;
+                case 9:
+                    PrintRichCustomers();
+                    Console.WriteLine();
+                    break;
+                case 10:
+                    PrintActiveCustomers();
                     Console.WriteLine();
                     break;
                 default:
@@ -251,7 +276,7 @@ namespace ConsoleCouture
 
             if (agegroup == 0 || agegroup == 10)
             {
-                sRet = "Barn och ungdom";
+                sRet = "Barn och unga";
             }
             else if(agegroup > 200)
             {
@@ -259,7 +284,7 @@ namespace ConsoleCouture
             }
             else
             {
-                sRet += agegroup + "-åringar";
+                sRet += $"{agegroup}-{agegroup + 10} år";
             }
 
 
@@ -296,6 +321,191 @@ namespace ConsoleCouture
                     foreach (var pd in group)
                     {
                         Console.WriteLine($"{pd.ProductName,-85}{(pd.Quantity + " st"),-20}{pd.TotalPrice:C2}");
+                    }
+                }
+            }
+        }
+        private static void PrintSalesByCategory()
+        {
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var result = from
+                               product in db.Products
+                             join
+                               details in db.OrderDetails on product.Id equals details.ProductId
+                             join
+                               orders in db.Orders on details.OrderId equals orders.Id
+                             join
+                               categories in db.Categories on product.CategoryId equals categories.Id
+                             where details.Quantity > 0 && categories.Name != null
+                             select new { ProductName = product.Name, Quantity = details.Quantity, Category = categories.Name, TotalPrice = (long)(product.Price * details.Quantity) };
+
+
+                var groupedResult = (from prods in result.ToList()
+                                     orderby prods.Category
+                                     group prods by prods.Category).ToList();
+
+                Console.WriteLine();
+                Console.WriteLine("Kategoriernas popularitet:");
+                foreach (var group in groupedResult)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"{group.Key}:");
+
+                    long sumQuantity = group.Sum(prod => (long)prod.Quantity);
+                    long sumPrice = group.Sum(prod => prod.TotalPrice);
+
+                    Console.WriteLine($"{sumQuantity} enheter sålda.");
+                    Console.WriteLine($"{sumPrice} totalt pris.");
+                }
+            }
+        }
+        private static void PrintSalesBySupplier()
+        {
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var result = from
+                                   product in db.Products
+                             join
+                               details in db.OrderDetails on product.Id equals details.ProductId
+                             join
+                               supplier in db.Suppliers on product.SupplierId equals supplier.Id
+                             where details.Quantity > 0 && supplier.CompanyName != null
+                             select new { SupplierCompany = supplier.CompanyName, TotalPrice = (long)(product.Price * details.Quantity) };
+
+                var groupedResult = (from prods in result.ToList()
+                                     group prods by prods.SupplierCompany).ToList();
+
+                Console.WriteLine();
+                Console.WriteLine("Värdet av alla leverantörers produkter:");
+
+
+                foreach (var group in groupedResult)
+                {
+                    long sumPrice = group.Sum(prod => prod.TotalPrice);
+
+                    Console.WriteLine();
+                    Console.WriteLine($"{group.Key}: {sumPrice:C2}");
+                }
+            }
+        }
+        private static void PrintMenBuyingWomensClothing()
+        {
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                //Because of INNER JOIN, only the customers who bought Skirts/dresses will be included...
+                var result = from
+                               product in db.Products
+                             join
+                               categories in db.Categories on product.CategoryId equals categories.Id
+                             join
+                               orders in db.Orders on product.Id equals orders.Id
+                             join 
+                               details in db.OrderDetails on product.Id equals details.ProductId
+                             join
+                               customers in db.Customers on orders.CustomerId equals customers.Id
+                             where categories.Name == "Klänningar och kjolar"
+                             select new { CustomerName = (customers.FirstName + " " + customers.LastName), ProductName = product.Name };
+
+                var groupedResult = (from clients in result.ToList()
+                                     group clients by clients.CustomerName).ToList();
+
+                Console.WriteLine();
+                Console.WriteLine("Män som köpte klänningar eller kjolar:");
+
+                if(groupedResult.Count == 0)
+                {
+                    Console.WriteLine("Ingen data ännu.");
+                }
+
+
+                foreach (var group in groupedResult)
+                {
+                    Console.WriteLine();
+                    Console.WriteLine($"{group.Key} köpte:");
+
+                    foreach(var x in group)
+                    {
+                        Console.WriteLine(x.ProductName);
+                    }
+                }
+            }
+        }
+
+        private static void PrintRichCustomers()
+        {
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var result = from
+                               product in db.Products
+                             join
+                               details in db.OrderDetails on product.Id equals details.ProductId
+                             join
+                               orders in db.Orders on details.OrderId equals orders.Id
+                             join
+                               customers in db.Customers on orders.CustomerId equals customers.Id
+                             where details.Quantity > 0
+                             select new { Name = customers.FirstName + " " + customers.LastName, Mail = customers.Mail, Phone = customers.Phone, TotalPrice = (long)(details.UnitPrice * details.Quantity)};
+
+                var groupedResult = (from prods in result.ToList()
+                                     orderby prods.TotalPrice descending
+                                     group prods by prods.Name).Take(100).ToList();
+
+                Console.WriteLine();
+                Console.WriteLine("Top 100 storhandlande kunder:");
+
+
+                foreach (var group in groupedResult)
+                {
+                    long sumTotalPrice = group.Sum(prod => prod.TotalPrice);
+
+                    Console.WriteLine();
+                    Console.WriteLine($"{group.Key}:");
+                    Console.WriteLine($"Total spendering: {sumTotalPrice}");
+
+                    var iGroup = group.ToList();
+                    Console.WriteLine(iGroup[^1].Phone);
+                    Console.WriteLine(iGroup[^1].Mail);
+                }
+            }
+        }
+
+        private static void PrintActiveCustomers()
+        {
+            using (var db = new Models.ConsoleCoutureContext())
+            {
+                var result = from
+                               product in db.Products
+                              join
+                                details in db.OrderDetails on product.Id equals details.ProductId
+                              join
+                                orders in db.Orders on details.OrderId equals orders.Id
+                              join
+                                customers in db.Customers on orders.CustomerId equals customers.Id
+                              where details.Quantity > 0
+                              select new { Name = customers.FirstName + " " + customers.LastName, Mail = customers.Mail, Phone = customers.Phone, OrderDate = orders.OrderDate };
+
+                var groupedResult = (from prods in result.ToList()
+                                     orderby prods.OrderDate descending
+                                     group prods by prods.Name).Take(100).ToList();
+
+                Console.WriteLine();
+                Console.WriteLine("Top 100 nyligen aktiva kunder:");
+
+
+                foreach (var group in groupedResult)
+                {
+
+                    Console.WriteLine();
+                    Console.WriteLine($"{group.Key}:");
+                    var iGroup = group.ToList();
+                    Console.WriteLine("Tel: " + iGroup[^1].Phone);
+                    Console.WriteLine("Email: " + iGroup[^1].Mail);
+
+                    DateTime date = iGroup[^1].OrderDate ?? DateTime.MinValue;
+                    if(date != DateTime.MinValue)
+                    {
+                        Console.WriteLine($"Senast aktiv: {date.ToString("dd-MM-yyyy")}");
                     }
                 }
             }
